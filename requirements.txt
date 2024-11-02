@@ -7,3 +7,7 @@ streamlit==1.39.0
 streamlit_drawable_canvas==0.9.3
 streamlit-javascript==0.1.5
 tensorflow[and-cuda]==2.14.0
+python-multipart
+fastapi 
+uvicorn
+ray[serve]

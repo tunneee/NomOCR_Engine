@@ -9,6 +9,7 @@
 > ```conda install nvidia/label/cuda-11.8.0::cuda-toolkit -c nvidia/label/cuda-11.8.0```
 > ```conda install -c conda-forge cudnn```
 > CuDNN error: https://gist.github.com/bennyistanto/46d8cfaf88aaa881ec69a2b5ce60cb58
+> ```export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH```
 
 
 ## Usage

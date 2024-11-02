@@ -13,6 +13,10 @@ from handler.translator import hcmus_translate, hvdic_render
 from toolbar import render_toolbar
 from style import custom_css
 
+import tensorflow as tf
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+  tf.config.experimental.set_memory_growth(gpu, True)
 
 st.set_page_config('Digitalize old Vietnamese handwritten script for historical document archiving', '🇻🇳', 'wide')
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -27,6 +31,8 @@ with st.sidebar:
     st.info("Vietnamese Hán-Nôm digitalization using [VNPF's site](https://www.nomfoundation.org) as collected source")
     
     uploaded_file = st.file_uploader('Choose a file:', type=['jpg', 'jpeg', 'png'])
+    if uploaded_file is not None:   
+        url = "./imgs/test_ocr.jpg"
     url = st.text_input('Image URL:', 'https://www.nomfoundation.org/data/kieu/1866/page01b.jpg')
     image_path = retrieve_image(uploaded_file, url)
     print(image_path)
