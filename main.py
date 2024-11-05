@@ -18,6 +18,20 @@ from handler.bbox import generate_initial_drawing, transform_fabric_box, order_b
 # gpus = tf.config.experimental.list_physical_devices('GPU')
 # for gpu in gpus:
 #     tf.config.experimental.set_memory_growth(gpu, True)
+from typing import List
+from pydantic import BaseModel
+
+class Patch(BaseModel):
+    nom: str
+    points: str
+    height: int
+    width: int
+
+class OCRResponse(BaseModel):
+    num_boxes: int
+    height: int
+    width: int
+    patches: List[Patch]
 
 app = FastAPI(
     title="NomOCR API",
@@ -58,37 +72,74 @@ async def ocr_image(file: UploadFile = File(...)):
             'box': box.tolist()
         })
     
-    return JSONResponse(content={"ocr_results": ocr_results})
+    response = OCRResponse(
+        num_boxes=len(boxes),
+        height=raw_image.shape[0],
+        width=raw_image.shape[1],
+        patches=[
+            Patch(nom=result['nom_text'], points=str(result['box']), height=patch.shape[0], width=patch.shape[1])
+            for result in ocr_results
+        ]
+    )
+    
+    return JSONResponse(content=response.dict())
 
 @app.post("/detect_boxes/")
 async def detect_boxes(file: UploadFile = File(...)):
-        # Read image file
-        image_bytes = await file.read()
-        image = Image.open(BytesIO(image_bytes))
-        raw_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-        
-        # Detect bounding boxes
-        boxes = det_model.predict_one_page(raw_image)
-        
-        return JSONResponse(content={"boxes": [box.tolist() for box in boxes]})
-
-@app.post("/detect_custom_boxes/")
-async def detect_custom_boxes(file: UploadFile = File(...), custom_boxes: list = None):
     # Read image file
     image_bytes = await file.read()
     image = Image.open(BytesIO(image_bytes))
     raw_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     
-    if custom_boxes is None:
-        # Detect bounding boxes
-        boxes = det_model.predict_one_page(raw_image)
-    else:
-        # Use provided custom boxes
-        boxes = [np.array(box) for box in custom_boxes]
+    # Detect bounding boxes
+    boxes = det_model.predict_one_page(raw_image)
     
     return JSONResponse(content={"boxes": [box.tolist() for box in boxes]})
 
+
+# @app.post("/recognize_custom_boxes/")
+# async def recognize_custom_boxes(custom_boxes: List[List[int]], file: UploadFile = File(...)):
+#     # Read image file
+#     image_bytes = await file.read()
+#     image = Image.open(BytesIO(image_bytes))
+#     raw_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     
+#     # Use provided custom boxes
+#     boxes = [np.array(box) for box in custom_boxes]
+    
+#     # Recognize text in each bounding box
+#     ocr_results = []
+#     for box in boxes:
+#         patch = get_patch(raw_image, box)
+#         nom_text = rec_model.predict_one_patch(patch).strip()
+#         ocr_results.append({
+#             'nom_text': nom_text,
+#             'box': box.tolist()
+#         })
+    
+#     response = OCRResponse(
+#         num_boxes=len(boxes),
+#         height=raw_image.shape[0],
+#         width=raw_image.shape[1],
+#         patches=[
+#             Patch(nom=result['nom_text'], points=str(result['box']), height=patch.shape[0], width=patch.shape[1])
+#             for result in ocr_results
+#         ]
+#     )
+    
+#     return JSONResponse(content=response.dict())
+
+@app.post("/recognize_patch/")
+async def recognize_patch(file: UploadFile = File(...)):
+    # Read patch image file
+    image_bytes = await file.read()
+    patch_image = Image.open(BytesIO(image_bytes))
+    patch = cv2.cvtColor(np.array(patch_image), cv2.COLOR_RGB2BGR)
+    
+    # Recognize text in the patch
+    nom_text = rec_model.predict_one_patch(patch).strip()
+    
+    return JSONResponse(content={"nom_text": nom_text})
 
 if __name__ == "__main__":
     import uvicorn
