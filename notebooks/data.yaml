@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['nom_patch']
+
+roboflow:
+  workspace: research-irlqs
+  project: nom-47vls
+  version: 3
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/research-irlqs/nom-47vls/dataset/3

@@ -13,7 +13,7 @@ class DBNet(tf.keras.Model):
     def __init__(self):
         super().__init__()
         self.model = self._build_model()
-        self.post_processor = PostProcessor(min_box_score=0.5, max_candidates=1000)
+        self.post_processor = PostProcessor(min_box_score=0.1, max_candidates=1000)
         
 
     def _build_model(self, k=50):

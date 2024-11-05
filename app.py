@@ -18,7 +18,7 @@ gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
   tf.config.experimental.set_memory_growth(gpu, True)
 
-st.set_page_config('Digitalize old Vietnamese handwritten script for historical document archiving', '🇻🇳', 'wide')
+st.set_page_config('NomOCR Project', '🇻🇳', 'wide')
 st.markdown(custom_css, unsafe_allow_html=True)
 # download_assets()
 det_model, rec_model = load_models()
@@ -37,7 +37,7 @@ with st.sidebar:
     image_path = retrieve_image(uploaded_file, url)
     print(image_path)
     
-    st.markdown('''
+    st.markdown(''' 
         #### My digitalization series: 
         - [Optical Character Recognition](https://github.com/ds4v/NomNaOCR)
         - [Neural Machine Translation](https://github.com/ds4v/NomNaNMT)
@@ -100,12 +100,12 @@ with col2:
                 }
                 with open(f'data/data.csv', 'w', encoding='utf-8', newline='') as csv_file:
                     csv_file.write('x1,y1,x2,y2,x3,y3,x4,y4,nom,modern,height,width\n')
-                    
+                    nom_text_full = ''''''
                     for idx, box in enumerate(canvas_boxes):
                         patch = get_patch(raw_image, box)
                         nom_text = rec_model.predict_one_patch(patch).strip()
+                        nom_text_full += nom_text + '\n'
                         # modern_text = hcmus_translate(nom_text).strip()
-                            
                         with st.expander(f':red[**Text {idx + 1:02d}**:] {nom_text}'):
                             col21, col22 = st.columns([1, 7])
                             with col21:
@@ -129,6 +129,12 @@ with col2:
                         encoded_patch = cv2.imencode('.jpg', cv2.cvtColor(patch, cv2.COLOR_BGR2RGB))[1]
                         zip_file.writestr(f'img/{nom_text}.jpg', encoded_patch)
                         csv_file.write(points + f',{nom_text}, {patch.shape[0]},{patch.shape[1]}\n')
+                    st.markdown(f'### **Full Text**')
+                    # st write with markdown 
+                    st.markdown(f'```{nom_text_full}```')
+                    
+                    print(nom_text_full)
+                    
                 json.dump(saved_json, json_file, ensure_ascii=False, indent=4)
                 
             zip_file.write('data/data.json')
