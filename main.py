@@ -6,9 +6,10 @@ from PIL import Image
 from io import BytesIO
 import tensorflow as tf
 from fastapi.middleware.cors import CORSMiddleware
-
+from pathlib import Path
 import ray
 from ray import serve
+from PIL import ImageFont, ImageDraw, Image
 
 from handler.asset import hash_bytes, load_models, retrieve_image
 from handler.bbox import generate_initial_drawing, transform_fabric_box, order_boxes4nom, get_patch
@@ -44,13 +45,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Load custom font
+font_path = "./fonts/NomNaTong-Regular.ttf"
+if not Path(font_path).exists():
+    raise FileNotFoundError(f"Font file not found: {font_path}")
 
+font = ImageFont.truetype(font_path, 16)
 # Load models
 det_model, rec_model = load_models()
 
 # @app.on_event("startup")
 # async def startup_event():
     
+    
+def two_point_to_four_point(box):
+    return np.array([
+        [box[0], box[1]],
+        [box[2], box[1]],
+        [box[2], box[3]],
+        [box[0], box[3]]
+    ])
 
 @app.post("/ocr/")
 async def ocr_image(file: UploadFile = File(...)):
@@ -60,8 +74,10 @@ async def ocr_image(file: UploadFile = File(...)):
     raw_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     
     # Detect bounding boxes
-    boxes = det_model.predict_one_page(raw_image)
+    boxes = det_model(raw_image)[0].boxes.xyxy.to("cpu").numpy()
+    boxes = [two_point_to_four_point(box) for box in boxes]
     
+    print(boxes)
     # Recognize text in each bounding box
     ocr_results = []
     for box in boxes:
@@ -72,6 +88,21 @@ async def ocr_image(file: UploadFile = File(...)):
             'box': box.tolist()
         })
     
+    # Draw bounding boxes and text on the image
+    for result in ocr_results:
+        box = np.array(result['box'], dtype=np.int32)
+        nom_text = result['nom_text']
+        cv2.polylines(raw_image, [box], isClosed=True, color=(0, 255, 0), thickness=2)
+        img_pil = Image.fromarray(raw_image)
+        draw = ImageDraw.Draw(img_pil)
+        for i, char in enumerate(nom_text):
+            draw.text((box[0][0], box[0][1] - 10 + i * 18), char, font=font, fill=(255, 0, 0, 255))
+        raw_image = np.array(img_pil)
+
+    # Save the image with bounding boxes to a temporary folder
+    output_path = Path("./tmp/output_image.jpg")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(output_path, raw_image)
     response = OCRResponse(
         num_boxes=len(boxes),
         height=raw_image.shape[0],
@@ -92,7 +123,8 @@ async def detect_boxes(file: UploadFile = File(...)):
     raw_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     
     # Detect bounding boxes
-    boxes = det_model.predict_one_page(raw_image)
+    boxes = det_model(raw_image)[0].boxes.xyxy.to("cpu").numpy()
+    boxes = [two_point_to_four_point(box) for box in boxes]
     
     return JSONResponse(content={"boxes": [box.tolist() for box in boxes]})
 
