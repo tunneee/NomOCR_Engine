@@ -1,5 +1,6 @@
 # FROM ubuntu:latest
 FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+# FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 
 LABEL maintainer="tuonghh@fpt.com"
 
@@ -15,6 +16,8 @@ RUN apt-get update \
     RUN set -xe \
     && apt-get update -y \
     && apt-get install -y python3-pip
+
+RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 
 RUN pip install --upgrade pip
 # Install miniconda
@@ -52,13 +55,13 @@ COPY requirements.txt /tmp/requirements.txt
 
 
 RUN pip install -r /tmp/requirements.txt
-
+# RUN pip uninstall nvidia_cublas_cu11
 COPY . /app
 
 WORKDIR /app
 
 # Run Uvicorn 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--workers", "8"]
 
 # RUN echo "source activate env" > ~/.bashrc
 
