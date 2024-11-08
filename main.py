@@ -16,9 +16,9 @@ from handler.bbox import generate_initial_drawing, transform_fabric_box, order_b
 
 
 # Configure TensorFlow GPU settings
-# gpus = tf.config.experimental.list_physical_devices('GPU')
-# for gpu in gpus:
-#     tf.config.experimental.set_memory_growth(gpu, True)
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
 from typing import List
 from pydantic import BaseModel
 
@@ -77,7 +77,7 @@ async def ocr_image(file: UploadFile = File(...)):
     boxes = det_model(raw_image)[0].boxes.xyxy.to("cpu").numpy()
     boxes = [two_point_to_four_point(box) for box in boxes]
     
-    print(boxes)
+    # print(boxes)
     # Recognize text in each bounding box
     ocr_results = []
     for box in boxes:
