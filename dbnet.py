@@ -63,7 +63,7 @@ class DBNet(tf.keras.Model):
         return cv2.resize(image, (new_width, new_height))
 
 
-    @st.cache_data(show_spinner=False)
+    # @st.cache_data(show_spinner=False)
     def predict_one_page(_self, raw_image):
         image = _self.resize_image_short_side(raw_image).astype(float) / 255.0
         binarize_map = _self.model(tf.expand_dims(image, 0), training=False)[0]

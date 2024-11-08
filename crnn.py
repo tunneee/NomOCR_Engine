@@ -109,7 +109,7 @@ class CRNN(tf.keras.Model):
         return batch_texts 
 
 
-    @st.cache_data(show_spinner=False)
+    # @st.cache_data(show_spinner=False)
     def predict_one_patch(_self, patch_img):
         image = _self.process_image(patch_img)
         pred_tokens = _self.model.predict(tf.expand_dims(image, axis=0))
