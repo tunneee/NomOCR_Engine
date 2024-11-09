@@ -13,7 +13,9 @@ from PIL import ImageFont, ImageDraw, Image
 
 from handler.asset import hash_bytes, load_models, retrieve_image
 from handler.bbox import generate_initial_drawing, transform_fabric_box, order_boxes4nom, get_patch
+from utils.download_models import download_model
 
+download_model()
 
 # Configure TensorFlow GPU settings
 gpus = tf.config.experimental.list_physical_devices('GPU')
